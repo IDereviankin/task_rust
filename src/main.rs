@@ -1,4 +1,5 @@
 #[ derive( PartialEq, Eq, Clone ) ]
+/// Represents value which is either `any` or some number
 enum Value
 {
   Number( i32 ),
@@ -19,8 +20,35 @@ impl std::fmt::Debug for Value
 
 impl Value
 {
+  /// Returns number contained in `Number` consuming `self`.
+  /// 
+  /// # Panics
+  /// 
+  /// Panics if self value equals `Any`
+  /// 
+  /// # Examples
+  /// 
+  /// ```
+  /// let value = Value::Number( 1 );
+  /// assert_eq!
+  /// (
+  ///   value.assume_number(),
+  ///   1
+  /// );
+  /// ```
+  /// 
+  /// ```should_panic
+  /// let value = Value::Any;
+  /// assert_eq! // panics
+  /// (
+  ///   value.assume_number(),
+  ///   1
+  /// );
+  /// ```
   fn assume_number( self ) -> i32
   {
+    Option::unwrap(Some(1));
+
     match self
     {
       Value::Number( n ) => n,
@@ -29,11 +57,61 @@ impl Value
   }
 }
 
+/// Accepts **sorted** slices of values and returns
+/// vector of a numbers in `available` slice that
+/// present in `allowed` and closest to `preferred`.
+/// 
+/// # Examples
+/// 
+/// ```
+/// # use Value::*;
+/// assert_eq!
+/// (
+///   attempt
+///   (
+///     &[ 240, 360, 720 ],
+///     &[ Number( 360 ), Number( 720 ) ],
+///     &[ Number( 1080 ) ],
+///   ),
+///   vec![ 720 ],
+/// );
+/// ```
 fn attempt( available : &[ i32 ], allowed : &[ Value ], preferred : & [ Value ] ) -> Vec< i32 >
 {
   find_preferred( filter_allowed( available.to_vec(), allowed.to_vec() ), preferred.to_vec() )
 }
 
+/// Accepts **sorted** `Vec`s of values and returns `Vec` of numbers
+/// present in both `available` and `allowed`. If `allowed` contains
+/// [`Value::Any`], all numbers are allowed.
+/// 
+/// # Examples
+/// 
+/// ```
+/// # use Value::*;
+/// assert_eq!
+/// (
+///   filter_allowed
+///   (
+///     vec![ 240, 360, 720 ],
+///     vec![ Number( 360 ), Number( 720 ) ],
+///   ),
+///   vec![ 720 ],
+/// );
+/// ```
+/// 
+/// ```
+/// # use Value::*;
+/// assert_eq!
+/// (
+///   filter_allowed
+///   (
+///     vec![ 240, 360, 720 ],
+///     vec![ Number( 360 ), Any ],
+///   ),
+///   vec![ 240, 360, 720 ],
+/// );
+/// ```
 fn filter_allowed( available : Vec< i32 >, allowed : Vec< Value > ) -> Vec< i32 >
 {
   if allowed.iter().any( | x | *x == Value::Any )
@@ -75,6 +153,38 @@ fn filter_allowed( available : Vec< i32 >, allowed : Vec< Value > ) -> Vec< i32 
   }
 }
 
+/// Accepts **sorted** `Vec`s of values and returns `Vec` of numbers
+/// present in `available` and equal or greater (or smaller if no
+/// such values are present) to those in `preferred`. If `preferred`
+/// contains [`Value::Any`], all numbers are preferred.
+/// 
+/// # Examples
+/// 
+/// ```
+/// # use Value::*;
+/// assert_eq!
+/// (
+///   filter_preferred
+///   (
+///     vec![ 240, 360, 1080 ],
+///     vec![ Number( 360 ), Number( 720 ) ],
+///   ),
+///   vec![ 360, 1080 ],
+/// );
+/// ```
+/// 
+/// ```
+/// # use Value::*;
+/// assert_eq!
+/// (
+///   filter_preferred
+///   (
+///     vec![ 240, 360, 720 ],
+///     vec![ Number( 360 ), Any ],
+///   ),
+///   vec![ 240, 360, 720 ],
+/// );
+/// ```
 fn find_preferred( available : Vec< i32 >, preferred : Vec< Value > ) -> Vec< i32 >
 {
   if preferred.iter().any( | x | *x == Value::Any )
@@ -92,7 +202,7 @@ fn find_preferred( available : Vec< i32 >, preferred : Vec< Value > ) -> Vec< i3
       {
         index -= 1;
       }
-      if available.len() >= 1
+      if !available.is_empty()
       {
         result.push( available[ index ] );
       }
@@ -103,6 +213,8 @@ fn find_preferred( available : Vec< i32 >, preferred : Vec< Value > ) -> Vec< i3
   }
 }
 
+/// Prints out function arguments and result returned by
+/// `attempt` function with given arguments.
 fn print_attempt( available : &[ i32 ], allowed : &[ Value ], preferred : &[ Value ] )
 {
   print!( "available : [ " );
@@ -206,7 +318,7 @@ mod tests
   use crate::Value::*;
 
   #[ test ]
-  fn test()
+  fn test1()
   {
     assert_eq!
     (
@@ -218,6 +330,11 @@ mod tests
       ),
       vec![ 720 ],
     );
+  }
+
+  #[ test ]
+  fn test2()
+  {
     assert_eq!
     (
       attempt
@@ -228,6 +345,11 @@ mod tests
       ),
       vec![ 720 ],
     );
+  }
+
+  #[ test ]
+  fn test3()
+  {
     assert_eq!
     (
       attempt
@@ -238,6 +360,11 @@ mod tests
       ),
       vec![],
     );
+  }
+
+  #[ test ]
+  fn test4()
+  {
     assert_eq!
     (
       attempt
@@ -248,6 +375,11 @@ mod tests
       ),
       vec![ 240, 360 ],
     );
+  }
+
+  #[ test ]
+  fn test5()
+  {
     assert_eq!
     (
       attempt
@@ -258,6 +390,11 @@ mod tests
       ),
       vec![ 240, 720 ],
     );
+  }
+
+  #[ test ]
+  fn test6()
+  {
     assert_eq!
     (
       attempt
@@ -268,6 +405,11 @@ mod tests
       ),
       vec![ 240 ],
     );
+  }
+  
+  #[ test ]
+  fn test7()
+  {
     assert_eq!
     (
       attempt
@@ -278,6 +420,11 @@ mod tests
       ),
       vec![],
     );
+  }
+
+  #[ test ]
+  fn test8()
+  {
     assert_eq!
     (
       attempt
@@ -288,8 +435,12 @@ mod tests
       ),
       vec![ 360 ],
     );
+  }
 
-    // `any` tests
+  // `any` tests
+  #[ test ]
+  fn test_any1()
+  {
     assert_eq!
     (
       attempt
@@ -300,6 +451,11 @@ mod tests
       ),
       vec![ 360, 720 ],
     );
+  }
+
+  #[ test ]
+  fn test_any2()
+  {
     assert_eq!
     (
       attempt
@@ -310,6 +466,11 @@ mod tests
       ),
       vec![ 240, 360, 720 ],
     );
+  }
+
+  #[ test ]
+  fn test_any3()
+  {
     assert_eq!
     (
       attempt
@@ -320,6 +481,11 @@ mod tests
       ),
       vec![ 360 ],
     );
+  }
+
+  #[ test ]
+  fn test_any4()
+  {
     assert_eq!
     (
       attempt
